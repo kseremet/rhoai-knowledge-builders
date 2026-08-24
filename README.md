@@ -54,6 +54,13 @@ rhkb done <unit-ids>         # mark them off
 rhkb status
 ```
 
+Guide slugs change between releases, so check before pinning an `include:` list:
+
+```bash
+rhkb guides --source rhoai          # what this version actually publishes
+rhkb guides --source rhoai --yaml   # ready to paste into sources.yaml
+```
+
 Fetch a subset without touching the catalog:
 
 ```bash
@@ -65,8 +72,9 @@ rhkb fetch --limit 5 --dry-run    # trial run
 
 ## What's in the catalog
 
-**core** — RHOAI Self-Managed, AI Inference Server, AI Inference, Connectivity Link
-(RHEL AI available, off by default).
+**core** — RHOAI Self-Managed, AI Inference, Connectivity Link. RHEL AI and AI Inference
+Server are off by default (the latter's slug currently lists no guides of its own — check
+with `rhkb guides --source rhaiis`).
 
 **platform** — the OpenShift guides RHOAI actually depends on: accelerators, specialized
 hardware, nodes, machine management, storage, scalability, networking, ingress, operators,
@@ -95,6 +103,22 @@ and strips navigation, feedback widgets and "Copy to clipboard" artifacts. Every
 carries frontmatter recording product, version, source URL and — for repos — the commit.
 
 Keep using `rhoai-docsync` for PDFs. Different artifact, different job.
+
+## When fetching is refused (403)
+
+`docs.redhat.com` sits behind a CDN that sometimes rejects scripted clients. rhkb sends a
+full browser header set, and on a 403 it opens the site once in headless Chrome, copies the
+clearance cookies into the HTTP session and retries — after which normal requests work.
+
+```bash
+pip install playwright && playwright install chromium   # then re-run rhkb fetch
+```
+
+`--browser-fallback off` disables the escalation; `--browser-engine selenium` picks the
+other backend. If the interception is your own network rather than the CDN — a corporate
+proxy or TLS-inspecting gateway — rhkb says so explicitly instead of writing empty
+documents, and `export HTTPS_PROXY=...` is the fix. Repo sources go over git and are
+unaffected either way.
 
 ## Layout
 
