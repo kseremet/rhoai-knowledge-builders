@@ -82,23 +82,21 @@ sources:
     label: OpenShift Container Platform
     product: openshift_container_platform
     version: latest
+    # 2026-08-25: deprioritized per user request - main focus is Red Hat
+    # OpenShift AI. Keep only the OCP guides RHOAI's own docs assume: auth,
+    # monitoring/observability, and service mesh. The other guides already
+    # sit in raw/ocp/4.22/ from an earlier full fetch; their units were
+    # `rhkb skip`-ped in state.json rather than deleted, so `rhkb next`
+    # stops surfacing them without losing the fetched markdown. Re-add to
+    # this list (and `rhkb reset ocp/4.22/<guide>.md --yes`) to bring one
+    # back into scope.
     include:
-      - specialized_hardware_and_driver_enablement
-      - hardware_accelerators
-      - nodes
-      - machine_management
-      - storage
-      - scalability_and_performance
-      - networking_overview
-      - ingress_and_load_balancing
-      - operators
-      - extensions
       - monitoring
       - observability_overview
       - authentication_and_authorization
       - security_and_compliance
-      - postinstallation_configuration
-      - ai_workloads
+      - service_mesh   # not yet fetched - verify this slug with
+                        # `rhkb guides --source ocp --yaml` (needs network)
 
   - id: ocp-virt
     type: redhat-docs

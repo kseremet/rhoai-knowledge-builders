@@ -3,6 +3,11 @@
 This file tells the agent how to build and maintain the wiki. It is the contract.
 Read it fully before any ingest, query, or lint operation.
 
+For the *mechanics* of running an ingest in this environment (rhkb CLI
+gotchas, the standard drafting-subagent workflow, current priorities, and
+open follow-ups) — especially useful if you're a fresh session with no
+memory of prior ingests — read `AGENT_WORKFLOW.md` in the repo root too.
+
 ## Layers
 
 - `raw/` — immutable. Markdown extracted from docs.redhat.com and community sites by
