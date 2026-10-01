@@ -208,7 +208,31 @@ def main():
                 "# Serving models" in nested_md and "oc get pods" in nested_md, nested_md[:200])
 
     # --- block-page detection -------------------------------------------
-    from rhkb.fetch import FetchError, _reject_block_page
+    from rhkb.fetch import FetchError, _reject_block_page, guide_url, list_guides
+
+    ok &= check("standard guide URL uses html-single",
+                guide_url("openshift_container_platform", "4.22", "overview")
+                == "https://docs.redhat.com/en/documentation/openshift_container_platform/4.22/html-single/overview/index")
+    ok &= check("Automation Orchestrator guide URL uses direct page",
+                guide_url("automation_orchestrator", "2026.8", "discover-what_is_automation_orchestrator")
+                == "https://docs.redhat.com/en/documentation/automation_orchestrator/2026.8/discover-what_is_automation_orchestrator")
+
+    class GuideResponse:
+        status_code = 200
+        text = """<html><body>
+        <a href="/en/documentation/automation_orchestrator/2026.8/whats_new-automation_orchestrator_release_notes">Release notes</a>
+        <a href="/en/documentation/automation_orchestrator/2026.8/discover-what_is_automation_orchestrator">Discover</a>
+        <a href="/en/documentation/automation_orchestrator/2026.8/html-single/should-not-match/index">Other rendering</a>
+        </body></html>"""
+
+    class GuideSession:
+        def get(self, url, timeout):
+            return GuideResponse()
+
+    ok &= check("direct-link guide discovery works",
+                list_guides(GuideSession(), "automation_orchestrator", "2026.8")
+                == ["discover-what_is_automation_orchestrator",
+                    "whats_new-automation_orchestrator_release_notes"])
 
     def rejects(html, label):
         try:

@@ -30,6 +30,13 @@ GUIDE_RE = re.compile(
     r"/documentation/(?P<product>[a-z0-9_.\-]+)/(?P<version>[^/#?]+)/html(?:-single)?/(?P<slug>[^/#?]+)",
     re.IGNORECASE,
 )
+# Automation Orchestrator currently publishes guide pages directly below the
+# product/version path instead of exposing html-single links from its index.
+DIRECT_GUIDE_RE = re.compile(
+    r"/documentation/(?P<product>[a-z0-9_.\-]+)/(?P<version>[^/#?]+)/(?P<slug>(?!html(?:-single)?(?:/|$))[^/#?]+)",
+    re.IGNORECASE,
+)
+DIRECT_GUIDE_PRODUCTS = {"automation_orchestrator"}
 SKIP_SLUGS = {"index", "legal-notice", "making-open-source-more-inclusive"}
 TEXT_SUFFIXES = {".md", ".adoc", ".markdown", ".mdx", ".rst", ".txt", ".yaml", ".yml"}
 
@@ -151,13 +158,27 @@ def list_guides(sess: requests.Session, product: str, version: str) -> List[str]
     soup: BeautifulSoup = make_soup(get_html(sess, f"{DOC_ROOT}/{product}/{version}", timeout=30))
     slugs: List[str] = []
     for anchor in soup.find_all("a", href=True):
-        match = GUIDE_RE.search(anchor["href"])
+        href = anchor["href"]
+        match = (DIRECT_GUIDE_RE.search(href)
+                 if product.lower() in DIRECT_GUIDE_PRODUCTS else GUIDE_RE.search(href))
         if not match or match.group("product").lower() != product.lower():
             continue
         guide = match.group("slug")
         if guide.lower() not in SKIP_SLUGS and guide not in slugs:
             slugs.append(guide)
     return sorted(slugs)
+
+
+def guide_url(product: str, version: str, guide: str) -> str:
+    """Build the page URL for a discovered guide.
+
+    Most Red Hat documentation products expose an html-single rendering. The
+    Automation Orchestrator site currently links to its regular guide pages,
+    which contain the same documentation content but not the html-single path.
+    """
+    if product.lower() in DIRECT_GUIDE_PRODUCTS:
+        return f"{DOC_ROOT}/{product}/{version}/{guide}"
+    return f"{DOC_ROOT}/{product}/{version}/html-single/{guide}/index"
 
 
 def fetch_redhat_docs(source: Source, out_dir: Path, sess: Optional[requests.Session] = None,
@@ -179,7 +200,7 @@ def fetch_redhat_docs(source: Source, out_dir: Path, sess: Optional[requests.Ses
 
     written: List[Path] = []
     for guide in guides:
-        url = f"{DOC_ROOT}/{source.product}/{version}/html-single/{guide}/index"
+        url = guide_url(source.product, version, guide)
         try:
             html = get_html(sess, url)
             soup = make_soup(html)
